@@ -28,9 +28,9 @@ namespace MyPharmacyIntegrationTests
                         var dbContextOptions = services.SingleOrDefault(service => service.ServiceType == typeof(DbContextOptions<PharmacyDbContext>));
 
                         services.Remove(dbContextOptions);
-                        services.AddSingleton<IPolicyEvaluator, FakePolicyEvaluator>();
 
                         services.AddMvc(options => options.Filters.Add(new FakeUserFilter()));
+                        services.AddSingleton<IPolicyEvaluator, FakePolicyEvaluator>();
 
                         services.AddDbContext<PharmacyDbContext>(option => option.UseInMemoryDatabase("PharmacyDb"));
                     });
@@ -134,6 +134,70 @@ namespace MyPharmacyIntegrationTests
             //assert
             response.StatusCode.Should().Be(System.Net.HttpStatusCode.NotFound);
         }
+
+        [Fact]
+        public async Task UpdateById_WithExistingInformationId_ReturnsOk()
+        {
+            //arrange
+            var drugInformationToDatabase = new DrugInformation()
+            {
+                DrugsName = "testtest2",
+                SubstancesName = "testtest2",
+                Description = "testtest2",
+                LumpSumDrug = true,
+                PrescriptionRequired = true,
+                NumberOfTablets = 20,
+                MilligramsPerTablets = 2
+            };
+
+            SeedDrugInformation(drugInformationToDatabase);
+
+            var drugInformationUpdated = new UpdateDrugInformationDto()
+            {
+                DrugsName = "Test1",
+                SubstancesName = "Test1",
+                Description = "testtest2",
+                LumpSumDrug = true,
+                PrescriptionRequired = true,
+                NumberOfTablets = 30,
+                MilligramsPerTablets = 1,
+            };
+
+            //act
+            var httpContent = HttpContentHelper.SerializeToJson(drugInformationUpdated);
+
+            var response = await _client.PutAsync("/api/druginformation/" + drugInformationToDatabase.Id, httpContent);
+
+            //assert
+            response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+        }
+
+        [Fact]
+        public async Task UpdateById_WithNonExistentDrugInformationId_ReturnsNotFound()
+        {
+            //arrange
+            var drugInformationToDatabase = new DrugInformation()
+            {
+                DrugsName = "Ibuprom",
+                SubstancesName = "Ibuprofen"
+            };
+
+            SeedDrugInformation(drugInformationToDatabase);
+
+            var drugInformationUpdated = new DrugInformation()
+            {
+                DrugsName = "Test1",
+                SubstancesName = "Test1"
+            };
+            //act
+            var httpContent = HttpContentHelper.SerializeToJson(drugInformationUpdated);
+
+            var response = await _client.PutAsync("/api/drugcategory/" + drugInformationToDatabase.Id + 1, httpContent);
+
+            //assert
+            response.StatusCode.Should().Be(System.Net.HttpStatusCode.NotFound);
+        }
+
 
         private void SeedDrugInformation(DrugInformation drugInformation)
         {
