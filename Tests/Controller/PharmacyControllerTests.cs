@@ -27,7 +27,8 @@ namespace MyPharmacyIntegrationTests.Tests.Controller
             {
                 builder.ConfigureServices(services =>
                 {
-                    var dbContextOptions = services.SingleOrDefault(services => services.ServiceType == typeof(DbContextOptions<PharmacyDbContext>));
+                    var dbContextOptions = services
+                    .SingleOrDefault(services => services.ServiceType == typeof(DbContextOptions<PharmacyDbContext>));
 
                     services.Remove(dbContextOptions);
 
