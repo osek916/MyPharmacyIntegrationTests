@@ -7,6 +7,7 @@ using MyPharmacy;
 using MyPharmacy.Entities;
 using MyPharmacy.Models.OrderForPharmacyDtos;
 using MyPharmacyIntegrationTests.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -40,28 +41,8 @@ namespace MyPharmacyIntegrationTests.Tests.Controller
 
             _client = _factory.CreateClient();
 
-            /*
-            List<Status> statuses = SamplesOfData.ValidModelStatuses();
-            foreach (var status in statuses)
-            {
-                TestSeeder.SeedStatus(status, _factory);
-            }
-            */
         }
 
-        /*
-        [Theory]
-        //[InlineData(new OrderForPharmacy() { Price = 10})]
-        [InlineData(new OrderForPharmacy(){})]
-        public async Task CreateOrderForPharmacy_WithValidModel_ReturnsCreatedStatus(OrderForPharmacy order)
-        {
-            //arrange
-
-            //act
-
-            //assert
-        }
-        */
 
         [Fact]
         public async Task CreateOrderForPharmacy_WithValidModel_ReturnsCreatedStatus()
@@ -99,7 +80,6 @@ namespace MyPharmacyIntegrationTests.Tests.Controller
                 }
             };
 
-            //SeedPharmacy(pharmacy);
             TestSeeder.SeedPharmacy(pharmacy, _factory);
             foreach (var drugInformation in drugInformations)
             {
@@ -114,27 +94,312 @@ namespace MyPharmacyIntegrationTests.Tests.Controller
             //assert
             response.StatusCode.Should().Be(System.Net.HttpStatusCode.Created);
         }
-        /*
+        
         [Fact]
         public async Task UpdateStatusOfOrder_WithValidModel_ReturnsOkStatus()
         {
             //arrange
+            string status = "delivered";
+            var pharmacy = SamplesOfData.ValidModelPharmacy();
+            TestSeeder.SeedPharmacy(pharmacy, _factory);
+
             var orderForPharmacy = SamplesOfData.ValidModelOrderForPharmacy();
             orderForPharmacy.Status = new Status()
             {
-                Name = "during"
+                Name = "during",
             };
+            orderForPharmacy.PharmacyId = 1;
+
             TestSeeder.SeedOrderForPharmacy(orderForPharmacy, _factory);
 
+            var scopeFactory = _factory.Services.GetService<IServiceScopeFactory>();
+            var scope = scopeFactory.CreateScope();
+            var _dbContext = scope.ServiceProvider.GetService<PharmacyDbContext>();
+
+            int id = _dbContext.OrderForPharmacies.Select(x => x.Id).First();
             //act
-            var response = await _client.PutAsync("/api/orderforpharmacy", httpContent);
+            var httpContent = HttpContentHelper.SerializeToJson(status);
+
+            var response = await _client
+                .PutAsync($"/api/orderforpharmacy/status/{id}", httpContent);
 
             //assert
-
-
+            response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
         }
-        */
-       
-        
+
+        [Fact]
+        public async Task UpdateStatusOfOrder_WithInvalidStatus_ReturnsBadRequestStatus()
+        {
+            //arrange
+            string status = "this status doesn't exist";
+            var pharmacy = SamplesOfData.ValidModelPharmacy();
+            TestSeeder.SeedPharmacy(pharmacy, _factory);
+
+            var orderForPharmacy = SamplesOfData.ValidModelOrderForPharmacy();
+            orderForPharmacy.Status = new Status()
+            {
+                Name = "during",
+            };
+            orderForPharmacy.PharmacyId = 1;
+
+            TestSeeder.SeedOrderForPharmacy(orderForPharmacy, _factory);
+
+            var scopeFactory = _factory.Services.GetService<IServiceScopeFactory>();
+            var scope = scopeFactory.CreateScope();
+            var _dbContext = scope.ServiceProvider.GetService<PharmacyDbContext>();
+
+            int id = _dbContext.OrderForPharmacies.Select(x => x.Id).First();
+            //act
+            var httpContent = HttpContentHelper.SerializeToJson(status);
+
+            var response = await _client
+                .PutAsync($"/api/orderforpharmacy/status/{id}", httpContent);
+
+            //assert
+            response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
+        }
+
+        [Fact]
+        public async Task UpdateDateOfReceiptOfOrder_WithValidModel_ReturnsOkStatus()
+        {
+            //arrange
+            DateTime newDateOfReceipt = new DateTime(2020, 11, 20, 12, 22, 22);
+            var pharmacy = SamplesOfData.ValidModelPharmacy();
+            TestSeeder.SeedPharmacy(pharmacy, _factory);
+
+            var orderForPharmacy = SamplesOfData.ValidModelOrderForPharmacy(); //DateOfReceipt = new DateTime(1999, 11, 15)
+            orderForPharmacy.PharmacyId = 1;
+
+            TestSeeder.SeedOrderForPharmacy(orderForPharmacy, _factory);
+
+            var scopeFactory = _factory.Services.GetService<IServiceScopeFactory>();
+            var scope = scopeFactory.CreateScope();
+            var _dbContext = scope.ServiceProvider.GetService<PharmacyDbContext>();
+
+            int id = _dbContext.OrderForPharmacies.Select(x => x.Id).First();
+            //act
+            var httpContent = HttpContentHelper.SerializeToJson(newDateOfReceipt);
+
+            var response = await _client
+                .PutAsync($"/api/orderforpharmacy/dateofreceipt/{id}", httpContent);
+
+            //assert
+            response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+        }
+
+        [Fact]
+        public async Task UpdateDateOfReceiptOfOrder_WithInvalidDateOfReceipt_ReturnsBadRequestStatus()
+        {
+            //arrange
+            //New dateOfReceipt is lower than dateOfOrder
+            DateTime newDateOfReceipt = new DateTime(1993, 11, 20, 12, 22, 22);
+            var pharmacy = SamplesOfData.ValidModelPharmacy();
+            TestSeeder.SeedPharmacy(pharmacy, _factory);
+
+            var orderForPharmacy = SamplesOfData.ValidModelOrderForPharmacy(); //DateOfReceipt = new DateTime(1999, 11, 15)
+            orderForPharmacy.PharmacyId = 1;
+
+            TestSeeder.SeedOrderForPharmacy(orderForPharmacy, _factory);
+
+            var scopeFactory = _factory.Services.GetService<IServiceScopeFactory>();
+            var scope = scopeFactory.CreateScope();
+            var _dbContext = scope.ServiceProvider.GetService<PharmacyDbContext>();
+
+            int id = _dbContext.OrderForPharmacies.Select(x => x.Id).First();
+            //act
+            var httpContent = HttpContentHelper.SerializeToJson(newDateOfReceipt);
+
+            var response = await _client
+                .PutAsync($"/api/orderforpharmacy/dateofreceipt/{id}", httpContent);
+
+            //assert
+            response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
+        }
+
+        [Fact]
+        public async Task AddDrugToOrder_WithValidDrugToExistDrugInformation_ReturnsOkStatus()
+        {
+            //arrange
+            var pharmacy = SamplesOfData.ValidModelPharmacy();
+            TestSeeder.SeedPharmacy(pharmacy, _factory);
+
+            var orderForPharmacy = SamplesOfData.ValidModelOrderForPharmacy();
+            orderForPharmacy.PharmacyId = 1;
+
+            TestSeeder.SeedOrderForPharmacy(orderForPharmacy, _factory);
+
+            var scopeFactory = _factory.Services.GetService<IServiceScopeFactory>();
+            var scope = scopeFactory.CreateScope();
+            var _dbContext = scope.ServiceProvider.GetService<PharmacyDbContext>();
+
+            int id = _dbContext.OrderForPharmacies.Select(x => x.Id).First();
+
+            AddDrugToOrderDto addDrugOrderDto = new AddDrugToOrderDto()
+            {
+                DrugsName = "Ibuprom",
+                SubstancesName = "Ibuprofen",
+                NumberOfTablets = 20,
+                MilligramsPerTablets = 1,
+                AmountOfPackages = 2,
+                AdditionalCosts = 0,
+                Price = 10.33M
+            };
+
+            //act
+            var httpContent = HttpContentHelper.SerializeToJson(addDrugOrderDto);
+
+            var response = await _client
+                .PutAsync($"/api/orderforpharmacy/drug/{id}", httpContent);
+
+            //assert
+            response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+        }
+
+
+        [Fact]
+        public async Task AddDrugToOrder_WitInvalidDrugToExistDrugInformation_ReturnsBadRequestStatus()
+        {
+            //arrange
+            var pharmacy = SamplesOfData.ValidModelPharmacy();
+            TestSeeder.SeedPharmacy(pharmacy, _factory);
+
+            var orderForPharmacy = SamplesOfData.ValidModelOrderForPharmacy();
+            orderForPharmacy.PharmacyId = 1;
+
+            TestSeeder.SeedOrderForPharmacy(orderForPharmacy, _factory);
+
+            var scopeFactory = _factory.Services.GetService<IServiceScopeFactory>();
+            var scope = scopeFactory.CreateScope();
+            var _dbContext = scope.ServiceProvider.GetService<PharmacyDbContext>();
+
+            int id = _dbContext.OrderForPharmacies.Select(x => x.Id).First();
+
+            AddDrugToOrderDto addDrugOrderDto = new AddDrugToOrderDto()
+            {
+                DrugsName = "Ibuprom",
+                SubstancesName = "Ibuprofen",
+                NumberOfTablets = 20,
+                MilligramsPerTablets = 1,
+                AmountOfPackages = -2,
+                AdditionalCosts = 0,
+                Price = 10.33M
+            };
+
+            //act
+            var httpContent = HttpContentHelper.SerializeToJson(addDrugOrderDto);
+
+            var response = await _client
+                .PutAsync($"/api/orderforpharmacy/drug/{id}", httpContent);
+
+            //assert
+            response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
+        }
+
+
+        [Fact]
+        public async Task AddDrugToOrder_WithValidDrug_ReturnsOkStatus()
+        {
+            //arrange
+            var secondDrugInformation = new DrugInformation()
+            {
+                DrugsName = "New Drug",
+                SubstancesName = "newdrug",
+                NumberOfTablets = 20,
+                MilligramsPerTablets = 1,
+                Description = "new description",
+                LumpSumDrug = false,
+                PrescriptionRequired = true
+            };
+
+            TestSeeder.SeedDrugInformation(secondDrugInformation, _factory);
+
+            var pharmacy = SamplesOfData.ValidModelPharmacy();
+            TestSeeder.SeedPharmacy(pharmacy, _factory);
+
+            var orderForPharmacy = SamplesOfData.ValidModelOrderForPharmacy();
+            orderForPharmacy.PharmacyId = 1;
+
+            TestSeeder.SeedOrderForPharmacy(orderForPharmacy, _factory);
+
+            var scopeFactory = _factory.Services.GetService<IServiceScopeFactory>();
+            var scope = scopeFactory.CreateScope();
+            var _dbContext = scope.ServiceProvider.GetService<PharmacyDbContext>();
+
+            int id = _dbContext.OrderForPharmacies.Select(x => x.Id).First();            
+
+            AddDrugToOrderDto addDrugOrderDto = new AddDrugToOrderDto()
+            {
+                DrugsName = "New Drug",
+                SubstancesName = "newdrug",
+                NumberOfTablets = 20,
+                MilligramsPerTablets = 1,
+                AmountOfPackages = 2,
+                AdditionalCosts = 0,
+                Price = 10.33M
+            };
+
+            //act
+            var httpContent = HttpContentHelper.SerializeToJson(addDrugOrderDto);
+
+            var response = await _client
+                .PutAsync($"/api/orderforpharmacy/drug/{id}", httpContent);
+
+            //assert
+            response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+        }
+           
+
+        [Fact]
+        public async Task DeleteById_WithValidModel_ReturnsNoContentStatus()
+        {
+            //arrange
+            var pharmacy = SamplesOfData.ValidModelPharmacy();
+            TestSeeder.SeedPharmacy(pharmacy, _factory);
+
+            var orderForPharmacy = SamplesOfData.ValidModelOrderForPharmacy(); 
+            orderForPharmacy.PharmacyId = 1;
+
+            TestSeeder.SeedOrderForPharmacy(orderForPharmacy, _factory);
+
+            var scopeFactory = _factory.Services.GetService<IServiceScopeFactory>();
+            var scope = scopeFactory.CreateScope();
+            var _dbContext = scope.ServiceProvider.GetService<PharmacyDbContext>();
+
+            int id = _dbContext.OrderForPharmacies.Select(x => x.Id).First();    
+
+            //act
+            var response = await _client
+                .DeleteAsync($"/api/orderforpharmacy/{id}");
+
+            //assert
+            response.StatusCode.Should().Be(System.Net.HttpStatusCode.NoContent);
+        }
+
+        [Fact]
+        public async Task DeleteById_WithInvalidModel_ReturnsNotFoundStatus()
+        {
+            //arrange
+            var pharmacy = SamplesOfData.ValidModelPharmacy();
+            TestSeeder.SeedPharmacy(pharmacy, _factory);
+
+            var orderForPharmacy = SamplesOfData.ValidModelOrderForPharmacy();
+            orderForPharmacy.PharmacyId = 1;
+
+            TestSeeder.SeedOrderForPharmacy(orderForPharmacy, _factory);
+
+            var scopeFactory = _factory.Services.GetService<IServiceScopeFactory>();
+            var scope = scopeFactory.CreateScope();
+            var _dbContext = scope.ServiceProvider.GetService<PharmacyDbContext>();
+
+            int id = _dbContext.OrderForPharmacies.Select(x => x.Id).First();
+
+            //act
+            var response = await _client
+                .DeleteAsync($"/api/orderforpharmacy/{id + 1}");
+
+            //assert
+            response.StatusCode.Should().Be(System.Net.HttpStatusCode.NotFound);
+        }
+
     }
 }
