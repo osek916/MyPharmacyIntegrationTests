@@ -395,7 +395,7 @@ namespace MyPharmacyIntegrationTests.Tests.Controller
 
             //act
             var response = await _client
-                .DeleteAsync($"/api/orderforpharmacy/{id + 1}");
+                .DeleteAsync($"/api/orderforpharmacy/{id + 678}");
 
             //assert
             response.StatusCode.Should().Be(System.Net.HttpStatusCode.NotFound);
